@@ -1,7 +1,9 @@
 const express = require("express");
 const app = express();
-
+const PORT = 8080; // default port 8080
 app.set('view engine', 'ejs');
+
+
 // index page
 app.get('/', function(req, res) {
   var mascots = [
@@ -22,8 +24,6 @@ app.get('/', function(req, res) {
 app.get('/about', function(req, res) {
   res.render('pages/about');
 });
-
-const PORT = 8080; // default port 8080
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
