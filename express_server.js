@@ -70,6 +70,15 @@ app.get("/set", (req, res) => {
  app.get("/fetch", (req, res) => {
   res.send(`a = ${a}`);
  });
+ app.post('/urls/:id/delete', (req, res) => {
+  // Access the id from the request parameters
+  const id = req.params.id;
+
+  // Implement the logic to delete the URL by the id
+  delete urlDatabase[id];
+  // After deletion, redirect the client back to the URLs index page
+  res.redirect('/urls');
+});
  app.get("/u/:id", (req, res) => {
   // Step 1: Capture the `id` from the route parameter
   const shortUrlId = req.params.id;
