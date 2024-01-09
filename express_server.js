@@ -50,7 +50,9 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`)
 });
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = 
+  { shortUrl: req.params.id, 
+    longUrl: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 app.get("/", (req, res) => {
@@ -67,10 +69,24 @@ app.get("/set", (req, res) => {
   res.send(`a = ${a}`);
  });
  
- app.get("/fetch", (req, res) => {
+app.get("/fetch", (req, res) => {
   res.send(`a = ${a}`);
  });
- app.post('/urls/:id/delete', (req, res) => {
+ app.get("/urls/:id", (req, res) => {
+  // Step 1: Capture the `id` from the route parameter
+  const shortUrlId = req.params.id;
+
+  // Step 2: Look up the associated `longURL` in your `urlDatabase`
+  const longUrl = urlDatabase[shortUrlId];
+
+  // Step 3: If the `longURL` exists, redirect to it
+  if (longUrl) {
+    res.render('urls_show', { shortUrl: shortUrlId, longUrl: longUrl });
+  } else {
+    res.status(404).send('URL not found');
+  }
+});
+app.post('/urls/:id/delete', (req, res) => {
   // Access the id from the request parameters
   const id = req.params.id;
 
@@ -79,19 +95,34 @@ app.get("/set", (req, res) => {
   // After deletion, redirect the client back to the URLs index page
   res.redirect('/urls');
 });
- app.get("/u/:id", (req, res) => {
-  // Step 1: Capture the `id` from the route parameter
-  const shortUrlId = req.params.id;
+app.post('/urls/:shortUrl', (req, res) => {
+  const shortUrl = req.params.shortUrl;
+  const longURL = req.body.longURL;
 
-  // Step 2: Look up the associated `longURL` in your `urlDatabase`
-  const longURL = urlDatabase[shortUrlId];
+  // Check if the shortUrl exists in the urlDatabase
+  if (urlDatabase.hasOwnProperty(shortUrl)) {
+    // Update the urlDatabase with the new longURL for the given shortURL
+    urlDatabase[shortUrl] = longURL;
 
-  // Step 3: If the `longURL` exists, redirect to it
-  if (longURL) {
-    res.redirect(longURL);
+    // Once the data is updated, redirect the client:
+    res.redirect('/urls');
   } else {
-    // Step 4: If the `id` doesn't exist in the database, send a 404 response or redirect to an error page
-    res.status(404).send("Not found");
+    // If shortUrl doesn't exist, send a 404 response
+    res.status(404).send("Short URL not found");
+  }
+});
+app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
+  // Access the ':id' parameter using 'req.params'
+  const shortUrlId = req.params.id;
+  const longUrl = req.body.longUrl;
+  if (!urlDatabase.hasOwnProperty(shortUrlId)) {
+    return res.status(404).send("Short URL not found");
+  }
+  try{
+    urlDatabase[shortUrlId] = longUrl;
+    res.redirect('/urls')
+  } catch (error) {
+    res.status(500).send("Server Error");
   }
 });
 
