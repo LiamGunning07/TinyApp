@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser')
+app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,25 +36,39 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"] //Render username 
+   };
+   console.log('Template Vars',templateVars);
   res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies["username"],//Render username 
+    // ... any other vars
+  };
+  res.render("urls_new", templateVars);
 });
 app.post("/urls", (req, res) => {
   const longUrl = req.body.longUrl;
   const shortUrl = generateRandomString();
   urlDatabase[shortUrl] = longUrl;
+  console.log("Generated longUrl", longUrl);
   console.log('Generated shortURL:', shortUrl);
   console.log('Updated urlDatabase:', urlDatabase);
 
   res.redirect(`/urls/${shortUrl}`)
 });
 app.get("/urls/:id", (req, res) => {
-  const templateVars = 
-  { shortUrl: req.params.id, 
-    longUrl: urlDatabase[req.params.id] };
+  console.log("Url database", urlDatabase);
+  const templateVars =
+  {
+    shortUrl: req.params.id,
+    longUrl: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
+  console.log('Template Vars',templateVars);
   res.render("urls_show", templateVars);
 });
 app.get("/", (req, res) => {
@@ -97,12 +113,12 @@ app.post('/urls/:id/delete', (req, res) => {
 });
 app.post('/urls/:shortUrl', (req, res) => {
   const shortUrl = req.params.shortUrl;
-  const longURL = req.body.longURL;
+  const longUrl = req.body.longUrl;
 
   // Check if the shortUrl exists in the urlDatabase
   if (urlDatabase.hasOwnProperty(shortUrl)) {
     // Update the urlDatabase with the new longURL for the given shortURL
-    urlDatabase[shortUrl] = longURL;
+    urlDatabase[shortUrl] = longUrl;
 
     // Once the data is updated, redirect the client:
     res.redirect('/urls');
@@ -126,7 +142,7 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   }
 });
 app.post('/login', (req, res) => {
-  const username = req.body; // Making username input of username field
+  const username = req.body.username; // Making username input of username field
   res.cookie('username',username); // Storing username cookie as input of username
   res.redirect('/urls'); // Redirect to urls
 })
