@@ -25,6 +25,9 @@
           <th scope="col">Long URL</th>
           <th>Edit</th>
           <th>Delete</th>
+          <% if (username) { %>
+            Welcome, <%= username %>!
+          <% } %>
         </tr>
       </thead>
       <tbody>

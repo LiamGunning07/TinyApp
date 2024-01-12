@@ -22,6 +22,9 @@
             <input type="text" name="longUrl" value="<%= longUrl %>" required>
             <button type="submit">Update</button>
           </form>
+          <% if (username) { %>
+            Welcome, <%= username %>!
+          <% } %>
         </p>
       </div>
       <div class="card-footer text-muted"></div>
