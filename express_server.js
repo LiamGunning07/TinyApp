@@ -125,6 +125,11 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
     res.status(500).send("Server Error");
   }
 });
+app.post('/login', (req, res) => {
+  const username = req.body; // Making username input of username field
+  res.cookie('username',username); // Storing username cookie as input of username
+  res.redirect('/urls'); // Redirect to urls
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
