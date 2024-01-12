@@ -141,12 +141,20 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
     res.status(500).send("Server Error");
   }
 });
+
+// LOGIN AND LOGOUT ROUTES
+
 app.post('/login', (req, res) => {
   const username = req.body.username; // Making username input of username field
   res.cookie('username',username); // Storing username cookie as input of username
   res.redirect('/urls'); // Redirect to urls
 })
+app.post('/logout', (req, res) => {
+  res.clearCookie('username'); // clearing username cookie
+  res.redirect('/urls');
+})
 
+// Local host port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
