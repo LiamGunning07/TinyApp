@@ -43,6 +43,7 @@ app.get("/urls", (req, res) => {
    console.log('Template Vars',templateVars);
   res.render("urls_index", templateVars);
 });
+
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     username: req.cookies["username"],//Render username 
@@ -50,6 +51,7 @@ app.get("/urls/new", (req, res) => {
   };
   res.render("urls_new", templateVars);
 });
+
 app.post("/urls", (req, res) => {
   const longUrl = req.body.longUrl;
   const shortUrl = generateRandomString();
@@ -60,6 +62,7 @@ app.post("/urls", (req, res) => {
 
   res.redirect(`/urls/${shortUrl}`)
 });
+
 app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
   const templateVars =
@@ -71,15 +74,19 @@ app.get("/urls/:id", (req, res) => {
   console.log('Template Vars',templateVars);
   res.render("urls_show", templateVars);
 });
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
+
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
 app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
@@ -88,6 +95,7 @@ app.get("/set", (req, res) => {
 app.get("/fetch", (req, res) => {
   res.send(`a = ${a}`);
  });
+
  app.get("/urls/:id", (req, res) => {
   // Step 1: Capture the `id` from the route parameter
   const shortUrlId = req.params.id;
@@ -102,6 +110,11 @@ app.get("/fetch", (req, res) => {
     res.status(404).send('URL not found');
   }
 });
+
+app.get('/register', (req, res) => { // Render /register.ejs endpoint
+  res.render('register');
+})
+
 app.post('/urls/:id/delete', (req, res) => {
   // Access the id from the request parameters
   const id = req.params.id;
