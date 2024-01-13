@@ -49,17 +49,20 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies.userId;
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"] //Render username 
+    user: users[userId], //Updated username to pass user object instead 
+    //username: req.cookies["username"] //Render username 
    };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const userId = req.cookies.userId;
   const templateVars = {
-    username: req.cookies["username"],//Render username 
-    // ... any other vars
+    user: users[userId], // Updated to pass entire user object instead
+    //username: req.cookies["username"],//Render username 
   };
   res.render("urls_new", templateVars);
 });
@@ -77,11 +80,17 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
+  const userId = req.cookies.userId;
+
+  if(!userId) {// Error handling if user isnt logged in
+    return res.redirect('/login');
+  }
+
   const templateVars =
   {
     shortUrl: req.params.id,
     longUrl: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user: users[userId]// previous code username: req.cookies["username"]
   };
   res.render("urls_show", templateVars);
 });
@@ -189,12 +198,12 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
 // LOGIN AND LOGOUT ROUTES
 
 app.post('/login', (req, res) => {
-  const username = req.body.username; // Making username input of username field
-  res.cookie('username',username); // Storing username cookie as input of username
+  const userId = req.cookies.userId; //const username = req.body.username; // Making username input of username field
+  res.cookie('userId', userId); // Storing username cookie as input of username
   res.redirect('/urls'); // Redirect to urls
 })
 app.post('/logout', (req, res) => {
-  res.clearCookie('username'); // clearing username cookie
+  res.clearCookie('userId'); // clearing username cookie
   res.redirect('/urls');
 })
 
