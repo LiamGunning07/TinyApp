@@ -9,6 +9,19 @@ app.use(express.urlencoded({ extended: true }));
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
 // Testing GRS: console.log(generateRandomString());
 
+const users = { //Global Users Database
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 // index page
 app.get('/', function(req, res) {
   var mascots = [
@@ -40,7 +53,6 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     username: req.cookies["username"] //Render username 
    };
-   console.log('Template Vars',templateVars);
   res.render("urls_index", templateVars);
 });
 
@@ -71,7 +83,6 @@ app.get("/urls/:id", (req, res) => {
     longUrl: urlDatabase[req.params.id],
     username: req.cookies["username"]
   };
-  console.log('Template Vars',templateVars);
   res.render("urls_show", templateVars);
 });
 
@@ -111,9 +122,29 @@ app.get("/fetch", (req, res) => {
   }
 });
 
+// REGISTRATION ROUTES
+
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
   res.render('register');
 })
+
+app.post('/register', (req, res) => {
+  const { email, password } = req.body; // Taking email and password values from req.body
+  const userId = generateRandomString(); // Random ID number
+
+  const newUser = { // New user object
+    id: userId,
+    email,
+    password,
+  };
+
+  users[userId] = newUser; // Adding the new user to the user database
+
+  res.cookie('userId', userId) // Storing userId as cookie
+  res.redirect('/urls'); //redirect
+
+  console.log('Users', users); // testing updated users object
+});
 
 app.post('/urls/:id/delete', (req, res) => {
   // Access the id from the request parameters
