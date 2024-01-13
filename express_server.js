@@ -140,8 +140,21 @@ app.get('/register', (req, res) => { // Render /register.ejs endpoint
 app.post('/register', (req, res) => {
   const { email, password } = req.body; // Taking email and password values from req.body
   const userId = generateRandomString(); // Random ID number
-
-  const newUser = { // New user object
+  function getUserByEmail(email) {// HELPER FUNCTION FOR FINDING EXISTING USERS 
+    for (const userId in users) {
+      if (users[userId].email === email) {
+        return users[userId];
+      }
+    }
+    return null;
+  }
+if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
+  return res.status(400).send("You must fill out both fields to register.");
+}
+if (getUserByEmail(email)) { // ERROR HANDLING IF EMAIL IS ALREADY REGISTERED
+  return res.status(400).send("Email is already registered.");
+}
+const newUser = { // New user object
     id: userId,
     email,
     password,
