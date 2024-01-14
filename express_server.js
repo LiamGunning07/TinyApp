@@ -131,10 +131,13 @@ app.get("/fetch", (req, res) => {
   }
 });
 
-// REGISTRATION ROUTES
+// REGISTRATION/LOGIN GET ROUTES
 
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
   res.render('register');
+})
+app.get('/login', (req, res) => { // Render login.ejs
+  res.render('login');
 })
 
 app.post('/register', (req, res) => {
@@ -208,7 +211,7 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   }
 });
 
-// LOGIN AND LOGOUT ROUTES
+// LOGIN AND LOGOUT POST ROUTES
 
 app.post('/login', (req, res) => {
   const userId = req.cookies.userId; //const username = req.body.username; // Making username input of username field
