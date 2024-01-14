@@ -9,6 +9,17 @@ app.use(express.urlencoded({ extended: true }));
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
 // Testing GRS: console.log(generateRandomString());
 
+const userId = generateRandomString(); // Random ID number
+  function getUserByEmail(email) {// HELPER FUNCTION FOR FINDING EXISTING USERS 
+    for (const userId in users) {
+      if (users[userId].email === email) {
+        return users[userId];
+      }
+    }
+    return null;
+  }
+
+
 const users = { //Global Users Database
   userRandomID: {
     id: "userRandomID",
@@ -52,8 +63,7 @@ app.get("/urls", (req, res) => {
   const userId = req.cookies.userId;
   const templateVars = { 
     urls: urlDatabase,
-    user: users[userId], //Updated username to pass user object instead 
-    //username: req.cookies["username"] //Render username 
+    user: users[userId],  
    };
   res.render("urls_index", templateVars);
 });
@@ -61,8 +71,7 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies.userId;
   const templateVars = {
-    user: users[userId], // Updated to pass entire user object instead
-    //username: req.cookies["username"],//Render username 
+    user: users[userId], // Updated to pass entire user object instead 
   };
   res.render("urls_new", templateVars);
 });
@@ -90,7 +99,7 @@ app.get("/urls/:id", (req, res) => {
   {
     shortUrl: req.params.id,
     longUrl: urlDatabase[req.params.id],
-    user: users[userId]// previous code username: req.cookies["username"]
+    user: users[userId]
   };
   res.render("urls_show", templateVars);
 });
@@ -142,15 +151,7 @@ app.get('/login', (req, res) => { // Render login.ejs
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body; // Taking email and password values from req.body
-  const userId = generateRandomString(); // Random ID number
-  function getUserByEmail(email) {// HELPER FUNCTION FOR FINDING EXISTING USERS 
-    for (const userId in users) {
-      if (users[userId].email === email) {
-        return users[userId];
-      }
-    }
-    return null;
-  }
+  
 if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
   return res.status(400).send("You must fill out both fields to register.");
 }
@@ -214,13 +215,23 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
 // LOGIN AND LOGOUT POST ROUTES
 
 app.post('/login', (req, res) => {
-  const userId = req.cookies.userId; //const username = req.body.username; // Making username input of username field
-  res.cookie('userId', userId); // Storing username cookie as input of username
-  res.redirect('/urls'); // Redirect to urls
-})
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).send("Email and Password are required!")
+  }
+  const user = getUserByEmail(email);
+
+  if (user && user.password === password) {
+    res.cookie('userId', user.id); // Storing userId cookie as input of user.id
+    res.redirect("/urls");
+  } else {
+    res.status(401).send("Invalid Email or Password.");
+  }
+});
+
 app.post('/logout', (req, res) => {
-  res.clearCookie('userId'); // clearing username cookie
-  res.redirect('/urls');
+  res.clearCookie('userId'); // clearing userId cookie
+  res.redirect('/login');
 })
 
 // Local host port
