@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
 // Testing GRS: console.log(generateRandomString());
 
-const userId = generateRandomString(); // Random ID number
+// const userId = generateRandomString(); // Random ID number
   function getUserByEmail(email) {// HELPER FUNCTION FOR FINDING EXISTING USERS 
     for (const userId in users) {
       if (users[userId].email === email) {
@@ -151,6 +151,7 @@ app.get('/login', (req, res) => { // Render login.ejs
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body; // Taking email and password values from req.body
+  const userId = generateRandomString();
   
 if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
   return res.status(400).send("You must fill out both fields to register.");
