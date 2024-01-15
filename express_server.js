@@ -73,24 +73,32 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user: users[userId], // Updated to pass entire user object instead 
   };
+  if (userId && users[userId]) { // If user isn't logged in redirect to login/register
   res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.post("/urls", (req, res) => {
   const longUrl = req.body.longUrl;
   const shortUrl = generateRandomString();
-  urlDatabase[shortUrl] = longUrl;
+  const userId = req.cookies.userId;
+  if(userId && users[userId]) {
+    urlDatabase[shortUrl] = longUrl;
+    res.redirect(`/urls/${shortUrl}`)
+  } else {
+    res.send('<html><body>You cannot shorten URLs without logging in.</body></html>');
+  }
   console.log("Generated longUrl", longUrl);
   console.log('Generated shortURL:', shortUrl);
   console.log('Updated urlDatabase:', urlDatabase);
-
-  res.redirect(`/urls/${shortUrl}`)
 });
 
 app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
   const userId = req.cookies.userId;
-
+ 
   if(!userId) {// Error handling if user isnt logged in
     return res.redirect('/login');
   }
@@ -143,16 +151,26 @@ app.get("/fetch", (req, res) => {
 // REGISTRATION/LOGIN GET ROUTES
 
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
-  res.render('register');
+  const userId = req.cookies.userId;
+  if (userId && users[userId]) { // Let logged in user access register page
+    res.redirect('/urls');
+  } else {
+    res.render('register');
+  }
 })
 app.get('/login', (req, res) => { // Render login.ejs
+  const userId = req.cookies.userId;
+  if(userId && users[userId]) { // Won't let logged in user access login page
+    res.redirect('/urls');
+  } else {
   res.render('login');
+  }
 })
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body; // Taking email and password values from req.body
   const userId = generateRandomString();
-  
+
 if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
   return res.status(400).send("You must fill out both fields to register.");
 }
