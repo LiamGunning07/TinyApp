@@ -1,4 +1,5 @@
-const express = require("express");
+const express = require("express"); // Express Framework
+const bcrypt = require("bcryptjs"); // Hashing Password
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser')
@@ -195,7 +196,8 @@ app.get("/fetch", (req, res) => {
 
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
   const userId = req.cookies.userId;
-  if (userId && users[userId]) { // Let logged in user access register page
+
+  if (userId && users[userId]) { // Doesn't Let logged in user access register page
     res.redirect('/urls');
   } else {
     res.render('register');
@@ -213,6 +215,7 @@ app.get('/login', (req, res) => { // Render login.ejs
 app.post('/register', (req, res) => {
   const { email, password } = req.body; // Taking email and password values from req.body
   const userId = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password,10);
 
 if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
   return res.status(400).send("You must fill out both fields to register.");
@@ -223,7 +226,7 @@ if (getUserByEmail(email)) { // ERROR HANDLING IF EMAIL IS ALREADY REGISTERED
 const newUser = { // New user object
     id: userId,
     email,
-    password,
+    hashedPassword,
   };
 
   users[userId] = newUser; // Adding the new user to the user database
@@ -269,7 +272,6 @@ app.post('/urls/:shortUrl', (req, res) => {
 });
 app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   // Access the ':id' parameter using 'req.params'
-  const email = req.cookies.email;
   const userId = req.cookies.userId;
   const id = req.params.id;
   const longUrl = req.body.longUrl;
@@ -292,12 +294,12 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password,10);
   if (!email || !password) {
     return res.status(400).send("Email and Password are required!")
   }
   const user = getUserByEmail(email);
-  res.cookie('email',email); // Making email availiable cookie
-  if (user && user.password === password) {
+  if (bcrypt.compareSync(password, hashedPassword)) {
     res.cookie('userId', user.id); // Storing userId cookie as input of user.id
     res.redirect("/urls");
   } else {
@@ -306,8 +308,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('userId'); // clearing userId cookie
-  res.clearCookie('email'); 
+  res.clearCookie('userId'); // clearing userId cookie 
   res.redirect('/login');
 })
 
