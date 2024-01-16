@@ -239,7 +239,7 @@ app.post('/urls/:id/delete', (req, res) => {
   const longUrl = req.body.longUrl;
   const userId = req.cookies.userId;
   const id = req.params.id; // Access the id from the request parameters
-  if (urlsForUser(userId) !== userId) {// URL does not exist or does not belong to the logged-in user
+  if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
     const errorMessage = "You do not have permission to edit this URL.";
     res.status(403).send(errorMessage);
     return;
@@ -255,7 +255,7 @@ app.post('/urls/:shortUrl', (req, res) => {
   const userId = req.cookies.userId;
 
   // Check if the shortUrl exists in the urlDatabase
-  if (urlsForUser(userId) === userId) {
+  if (urlDatabase.hasOwnProperty(shortUrl)) {
     // Update the urlDatabase with the new longURL for the given shortUrl
     urlDatabase[shortUrl] = {
       longUrl,
@@ -276,11 +276,12 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   const longUrl = req.body.longUrl;
   if (!urlDatabase.hasOwnProperty(shortUrlId)) {
     return res.status(404).send("Short URL not found");
-  } else if (urlsForUser(userId) !== userId) {// URL does not exist or does not belong to the logged-in user
+  } else if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
     const errorMessage = "You do not have permission to edit this URL.";
     res.status(403).send(errorMessage);
     return;
   }
+  
     urlDatabase[shortUrl] = {
       longUrl,
       userId,
