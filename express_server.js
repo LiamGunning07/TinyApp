@@ -80,7 +80,7 @@ app.get("/urls", (req, res) => {
     res.status(401).send(errorMsg);
     return;
   }
-  function urlsForUser(id) {
+  function urlsForUser(userId) {
     const userUrls = {};
     for (const shortUrl in urlDatabase) {
       if (urlDatabase[shortUrl].userId === userId) {
@@ -235,11 +235,9 @@ const newUser = { // New user object
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  const shortUrl = req.params.shortUrl;
-  const longUrl = req.body.longUrl;
   const userId = req.cookies.userId;
   const id = req.params.id; // Access the id from the request parameters
-  if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
+  if (userId !== urlDatabase[id].userId) {// URL does not exist or does not belong to the logged-in user
     const errorMessage = "You do not have permission to edit this URL.";
     res.status(403).send(errorMessage);
     return;
@@ -271,12 +269,13 @@ app.post('/urls/:shortUrl', (req, res) => {
 });
 app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   // Access the ':id' parameter using 'req.params'
+  const email = req.cookies.email;
   const userId = req.cookies.userId;
   const id = req.params.id;
   const longUrl = req.body.longUrl;
   if (!urlDatabase.hasOwnProperty(shortUrlId)) {
     return res.status(404).send("Short URL not found");
-  } else if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
+  } else if (userId !== urlDatabase[id].userId) {// URL does not exist or does not belong to the logged-in user
     const errorMessage = "You do not have permission to edit this URL.";
     res.status(403).send(errorMessage);
     return;
@@ -297,7 +296,7 @@ app.post('/login', (req, res) => {
     return res.status(400).send("Email and Password are required!")
   }
   const user = getUserByEmail(email);
-
+  res.cookie('email',email); // Making email availiable cookie
   if (user && user.password === password) {
     res.cookie('userId', user.id); // Storing userId cookie as input of user.id
     res.redirect("/urls");
@@ -308,6 +307,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   res.clearCookie('userId'); // clearing userId cookie
+  res.clearCookie('email'); 
   res.redirect('/login');
 })
 
