@@ -18,13 +18,21 @@ const generateRandomString = () => Math.random().toString(16).substr(6,6);
     }
     return null;
   }
-
+  function urlsForUser(id) { // HELPER FUNCTION FOR FINDING CORRESPONDING USER URLS
+    const userUrls = {};
+    for (const shortUrl in urlDatabase) {
+      if (urlDatabase[shortUrl].userID === id) {
+        userUrls[shortUrl] = urlDatabase[shortUrl];
+      }
+    }
+    return userUrls;
+  }
 
 const users = { //Global Users Database
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: "aaa",
   },
   user2RandomID: {
     id: "user2RandomID",
@@ -55,21 +63,43 @@ app.get('/about', function(req, res) {
 });
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  'b2xVn2': {
+    longUrl : "http://www.lighthouselabs.ca",
+    userId: "userRandomID",
+  },
+  '9sm5xK': {
+    longUrl: "http://www.google.com",
+    userId: "userRandomID",
+  },
 };
 
 app.get("/urls", (req, res) => {
   const userId = req.cookies.userId;
+  if(!userId) {
+    const errorMsg = "You must be logged in to view your URLs.";
+    res.status(401).send(errorMsg);
+    return;
+  }
+  function urlsForUser(id) {
+    const userUrls = {};
+    for (const shortUrl in urlDatabase) {
+      if (urlDatabase[shortUrl].userId === userId) {
+        userUrls[shortUrl] = urlDatabase[shortUrl];
+      }
+    }
+    return userUrls;
+  }
   const templateVars = { 
-    urls: urlDatabase,
+    urls: urlsForUser(userId),
     user: users[userId],  
    };
+   
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies.userId;
+
   const templateVars = {
     user: users[userId], // Updated to pass entire user object instead 
   };
@@ -85,28 +115,38 @@ app.post("/urls", (req, res) => {
   const shortUrl = generateRandomString();
   const userId = req.cookies.userId;
   if(userId && users[userId]) {
-    urlDatabase[shortUrl] = longUrl;
+    urlDatabase[shortUrl] = {
+      longUrl,
+      userId,
+    };
     res.redirect(`/urls/${shortUrl}`)
   } else {
     res.send('<html><body>You cannot shorten URLs without logging in.</body></html>');
   }
   console.log("Generated longUrl", longUrl);
-  console.log('Generated shortURL:', shortUrl);
+  console.log('Generated shortUrl:', shortUrl);
   console.log('Updated urlDatabase:', urlDatabase);
 });
 
 app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
   const userId = req.cookies.userId;
- 
+  const shortUrl = req.params.id;
+  const longUrl = req.body.longUrl;
+  urlDatabase[shortUrl] = {
+    longUrl,
+    userId,
+  };
   if(!userId) {// Error handling if user isnt logged in
     return res.redirect('/login');
+  } else if (!(shortUrl !== urlDatabase)) {
+    res.send('URL does not exist');
   }
 
   const templateVars =
   {
     shortUrl: req.params.id,
-    longUrl: urlDatabase[req.params.id],
+    longUrl: urlDatabase[shortUrl].longUrl,
     user: users[userId]
   };
   res.render("urls_show", templateVars);
@@ -135,11 +175,14 @@ app.get("/fetch", (req, res) => {
 
  app.get("/urls/:id", (req, res) => {
   // Step 1: Capture the `id` from the route parameter
-  const shortUrlId = req.params.id;
-
+  const shortUrl = req.params.id;
+  const longUrl = req.body.longUrl;
+  const userId = req.cookies.userId;
   // Step 2: Look up the associated `longURL` in your `urlDatabase`
-  const longUrl = urlDatabase[shortUrlId];
-
+  urlDatabase[shortUrl] = {
+    longUrl,
+    userId,
+  };
   // Step 3: If the `longURL` exists, redirect to it
   if (longUrl) {
     res.render('urls_show', { shortUrl: shortUrlId, longUrl: longUrl });
@@ -192,9 +235,15 @@ const newUser = { // New user object
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  // Access the id from the request parameters
-  const id = req.params.id;
-
+  const shortUrl = req.params.shortUrl;
+  const longUrl = req.body.longUrl;
+  const userId = req.cookies.userId;
+  const id = req.params.id; // Access the id from the request parameters
+  if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
+    const errorMessage = "You do not have permission to edit this URL.";
+    res.status(403).send(errorMessage);
+    return;
+  }
   // Implement the logic to delete the URL by the id
   delete urlDatabase[id];
   // After deletion, redirect the client back to the URLs index page
@@ -203,11 +252,15 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:shortUrl', (req, res) => {
   const shortUrl = req.params.shortUrl;
   const longUrl = req.body.longUrl;
+  const userId = req.cookies.userId;
 
   // Check if the shortUrl exists in the urlDatabase
   if (urlDatabase.hasOwnProperty(shortUrl)) {
-    // Update the urlDatabase with the new longURL for the given shortURL
-    urlDatabase[shortUrl] = longUrl;
+    // Update the urlDatabase with the new longURL for the given shortUrl
+    urlDatabase[shortUrl] = {
+      longUrl,
+      userId,
+    };
 
     // Once the data is updated, redirect the client:
     res.redirect('/urls');
@@ -218,13 +271,21 @@ app.post('/urls/:shortUrl', (req, res) => {
 });
 app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   // Access the ':id' parameter using 'req.params'
-  const shortUrlId = req.params.id;
+  const userId = req.cookies.userId;
+  const id = req.params.id;
   const longUrl = req.body.longUrl;
   if (!urlDatabase.hasOwnProperty(shortUrlId)) {
     return res.status(404).send("Short URL not found");
+  } else if (!urlDatabase[id] || urlDatabase[id].userId !== userId) {// URL does not exist or does not belong to the logged-in user
+    const errorMessage = "You do not have permission to edit this URL.";
+    res.status(403).send(errorMessage);
+    return;
   }
   try{
-    urlDatabase[shortUrlId] = longUrl;
+    urlDatabase[shortUrl] = {
+      longUrl,
+      userId,
+    };
     res.redirect('/urls')
   } catch (error) {
     res.status(500).send("Server Error");
