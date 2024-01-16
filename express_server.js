@@ -226,7 +226,7 @@ if (getUserByEmail(email)) { // ERROR HANDLING IF EMAIL IS ALREADY REGISTERED
 const newUser = { // New user object
     id: userId,
     email,
-    hashedPassword,
+    password: hashedPassword,
   };
 
   users[userId] = newUser; // Adding the new user to the user database
