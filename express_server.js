@@ -4,7 +4,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const cookieSessionConfig = cookieSession({
-  name: 'TinyApp',
+  name: 'TinyAppCookies',
   keys: ['h!de-my-cook!e$'],
   maxAge: 24 * 60 * 60 * 1000
 });
@@ -14,19 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 const getUserByEmail = require('../TinyApp/helpers.js');
 
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
-// Testing GRS: console.log(generateRandomString());
-
-// const userId = generateRandomString(); // Random ID number
-  
-  function urlsForUser(id) { // HELPER FUNCTION FOR FINDING CORRESPONDING USER URLS
-    const userUrls = {};
-    for (const shortUrl in urlDatabase) {
-      if (urlDatabase[shortUrl].userID === id) {
-        userUrls[shortUrl] = urlDatabase[shortUrl];
-      }
-    }
-    return userUrls;
-  }
 
 const users = { //Global Users Database
   userRandomID: {
@@ -142,7 +129,6 @@ app.get("/urls/:id", (req, res) => {
   } else if (!(shortUrl !== urlDatabase)) {
     res.send('URL does not exist');
   }
-
   const templateVars =
   {
     shortUrl: req.params.id,
@@ -192,7 +178,6 @@ app.get("/fetch", (req, res) => {
 });
 
 // REGISTRATION/LOGIN GET ROUTES
-
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
   const userId = req.session.userId;
 
@@ -269,6 +254,7 @@ app.post('/urls/:shortUrl', (req, res) => {
     res.status(404).send("Short URL not found");
   }
 });
+
 app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   // Access the ':id' parameter using 'req.params'
   const userId = req.session.userId;
@@ -281,7 +267,6 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
     res.status(403).send(errorMessage);
     return;
   }
-  
     urlDatabase[shortUrl] = {
       longUrl,
       userId,
