@@ -11,19 +11,13 @@ const cookieSessionConfig = cookieSession({
 app.use(cookieSessionConfig);
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
+const getUserByEmail = require('../TinyApp/helpers.js');
 
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
 // Testing GRS: console.log(generateRandomString());
 
 // const userId = generateRandomString(); // Random ID number
-  function getUserByEmail(email) {// HELPER FUNCTION FOR FINDING EXISTING USERS 
-    for (const userId in users) {
-      if (users[userId].email === email) {
-        return users[userId];
-      }
-    }
-    return null;
-  }
+  
   function urlsForUser(id) { // HELPER FUNCTION FOR FINDING CORRESPONDING USER URLS
     const userUrls = {};
     for (const shortUrl in urlDatabase) {
@@ -225,7 +219,7 @@ app.post('/register', (req, res) => {
 if (!email || !password) { // ERROR HANDLING FOR EMPTY FIELDS
   return res.status(400).send("You must fill out both fields to register.");
 }
-if (getUserByEmail(email)) { // ERROR HANDLING IF EMAIL IS ALREADY REGISTERED
+if (getUserByEmail(email, users)) { // ERROR HANDLING IF EMAIL IS ALREADY REGISTERED
   return res.status(400).send("Email is already registered.");
 }
 const newUser = { // New user object
@@ -303,7 +297,7 @@ app.post('/login', (req, res) => {
   if (!email || !password) {
     return res.status(400).send("Email and Password are required!")
   }
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
   if (bcrypt.compareSync(password, hashedPassword)) {
     req.session.userId = user.id; // Storing userId cookie as input of user.id
     res.redirect("/urls");
