@@ -2,8 +2,13 @@ const express = require("express"); // Express Framework
 const bcrypt = require("bcryptjs"); // Hashing Password
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser')
-app.use(cookieParser());
+const cookieSession = require('cookie-session');
+const cookieSessionConfig = cookieSession({
+  name: 'TinyApp',
+  keys: ['h!de-my-cook!e$'],
+  maxAge: 24 * 60 * 60 * 1000
+});
+app.use(cookieSessionConfig);
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
@@ -75,7 +80,7 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   if(!userId) {
     const errorMsg = "You must be logged in to view your URLs.";
     res.status(401).send(errorMsg);
@@ -99,7 +104,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
 
   const templateVars = {
     user: users[userId], // Updated to pass entire user object instead 
@@ -114,7 +119,7 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   const longUrl = req.body.longUrl;
   const shortUrl = generateRandomString();
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   if(userId && users[userId]) {
     urlDatabase[shortUrl] = {
       longUrl,
@@ -131,7 +136,7 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   const shortUrl = req.params.id;
   const longUrl = req.body.longUrl;
   urlDatabase[shortUrl] = {
@@ -178,7 +183,7 @@ app.get("/fetch", (req, res) => {
   // Step 1: Capture the `id` from the route parameter
   const shortUrl = req.params.id;
   const longUrl = req.body.longUrl;
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   // Step 2: Look up the associated `longURL` in your `urlDatabase`
   urlDatabase[shortUrl] = {
     longUrl,
@@ -195,7 +200,7 @@ app.get("/fetch", (req, res) => {
 // REGISTRATION/LOGIN GET ROUTES
 
 app.get('/register', (req, res) => { // Render /register.ejs endpoint
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
 
   if (userId && users[userId]) { // Doesn't Let logged in user access register page
     res.redirect('/urls');
@@ -204,7 +209,7 @@ app.get('/register', (req, res) => { // Render /register.ejs endpoint
   }
 })
 app.get('/login', (req, res) => { // Render login.ejs
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   if(userId && users[userId]) { // Won't let logged in user access login page
     res.redirect('/urls');
   } else {
@@ -231,14 +236,14 @@ const newUser = { // New user object
 
   users[userId] = newUser; // Adding the new user to the user database
 
-  res.cookie('userId', userId) // Storing userId as cookie
+  req.session.userId = userId; // Storing userId as cookie
   res.redirect('/urls'); //redirect
 
   console.log('Users', users); // testing updated users object
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   const id = req.params.id; // Access the id from the request parameters
   if (userId !== urlDatabase[id].userId) {// URL does not exist or does not belong to the logged-in user
     const errorMessage = "You do not have permission to edit this URL.";
@@ -253,7 +258,7 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:shortUrl', (req, res) => {
   const shortUrl = req.params.shortUrl;
   const longUrl = req.body.longUrl;
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
 
   // Check if the shortUrl exists in the urlDatabase
   if (urlDatabase.hasOwnProperty(shortUrl)) {
@@ -272,7 +277,7 @@ app.post('/urls/:shortUrl', (req, res) => {
 });
 app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
   // Access the ':id' parameter using 'req.params'
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   const id = req.params.id;
   const longUrl = req.body.longUrl;
   if (!urlDatabase.hasOwnProperty(shortUrlId)) {
@@ -300,7 +305,7 @@ app.post('/login', (req, res) => {
   }
   const user = getUserByEmail(email);
   if (bcrypt.compareSync(password, hashedPassword)) {
-    res.cookie('userId', user.id); // Storing userId cookie as input of user.id
+    req.session.userId = user.id; // Storing userId cookie as input of user.id
     res.redirect("/urls");
   } else {
     res.status(401).send("Invalid Email or Password.");
@@ -308,7 +313,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('userId'); // clearing userId cookie 
+  req.session = null; // clearing userId cookie 
   res.redirect('/login');
 })
 
