@@ -12,42 +12,20 @@ app.use(cookieSessionConfig);
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 const getUserByEmail = require('../TinyApp/helpers.js');
-
 const generateRandomString = () => Math.random().toString(16).substr(6,6);
 
 const users = { //Global Users Database
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "aaa",
+    password: bcrypt.hashSync("aaa",10)
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk",10)
   },
 };
-
-// index page
-app.get('/', function(req, res) {
-  var mascots = [
-    { name: 'Sammy', organization: "DigitalOcean", birth_year: 2012},
-    { name: 'Tux', organization: "Linux", birth_year: 1996},
-    { name: 'Moby Dock', organization: "Docker", birth_year: 2013}
-  ];
-  var tagline = "No programming concept is complete without a cute animal mascot.";
-
-  res.render('pages/index', {
-    mascots: mascots,
-    tagline: tagline
-  });
-
-});
-
-// about page
-app.get('/about', function(req, res) {
-  res.render('pages/about');
-});
 
 const urlDatabase = {
   'b2xVn2': {
@@ -138,26 +116,9 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
- });
- 
-app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
- });
 
  app.get("/urls/:id", (req, res) => {
   // Step 1: Capture the `id` from the route parameter
@@ -186,7 +147,7 @@ app.get('/register', (req, res) => { // Render /register.ejs endpoint
   } else {
     res.render('register');
   }
-})
+});
 app.get('/login', (req, res) => { // Render login.ejs
   const userId = req.session.userId;
   if(userId && users[userId]) { // Won't let logged in user access login page
@@ -278,13 +239,14 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  const user = getUserByEmail(email, users);
   const hashedPassword = bcrypt.hashSync(password,10);
   if (!email || !password) {
     return res.status(400).send("Email and Password are required!")
   }
-  const user = getUserByEmail(email, users);
-  if (bcrypt.compareSync(password, hashedPassword)) {
-    req.session.userId = user.id; // Storing userId cookie as input of user.id
+  console.log("User.password", user.password);
+  if (bcrypt.compareSync(password, user.password)) {
+    req.session.userId = user.id;// Storing userId cookie as input of user.id
     res.redirect("/urls");
   } else {
     res.status(401).send("Invalid Email or Password.");
