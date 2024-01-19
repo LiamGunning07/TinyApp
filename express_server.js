@@ -244,7 +244,6 @@ app.post('/login', (req, res) => {
   if (!email || !password) {
     return res.status(400).send("Email and Password are required!")
   }
-  console.log("User.password", user.password);
   if (bcrypt.compareSync(password, user.password)) {
     req.session.userId = user.id;// Storing userId cookie as input of user.id
     res.redirect("/urls");
