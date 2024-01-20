@@ -97,15 +97,11 @@ app.get("/urls/:id", (req, res) => {
   console.log("Url database", urlDatabase);
   const userId = req.session.userId;
   const shortUrl = req.params.id;
-  const longUrl = req.body.longUrl;
-  urlDatabase[shortUrl] = {
-    longUrl,
-    userId,
-  };
+  
   if(!userId) {// Error handling if user isnt logged in
     return res.redirect('/login');
-  } else if (!(shortUrl !== urlDatabase)) {
-    res.send('URL does not exist');
+  } else if (!urlDatabase[shortUrl]) {
+    return res.send('URL does not exist');
   }
   const templateVars =
   {
@@ -120,19 +116,15 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
- app.get("/urls/:id", (req, res) => {
+ app.get("/u/:id", (req, res) => {
+  console.log('hello');
   // Step 1: Capture the `id` from the route parameter
   const shortUrl = req.params.id;
-  const longUrl = req.body.longUrl;
-  const userId = req.session.userId;
-  // Step 2: Look up the associated `longURL` in your `urlDatabase`
-  urlDatabase[shortUrl] = {
-    longUrl,
-    userId,
-  };
+  const urlObject = urlDatabase[shortUrl];
+  console.log(urlObject);
   // Step 3: If the `longURL` exists, redirect to it
-  if (longUrl) {
-    res.render('urls_show', { shortUrl: shortUrlId, longUrl: longUrl });
+  if (urlObject) {
+    res.redirect(urlObject.longUrl);
   } else {
     res.status(404).send('URL not found');
   }
@@ -145,7 +137,7 @@ app.get('/register', (req, res) => { // Render /register.ejs endpoint
   if (userId && users[userId]) { // Doesn't Let logged in user access register page
     res.redirect('/urls');
   } else {
-    res.render('register');
+    res.render('register',{user: null});
   }
 });
 app.get('/login', (req, res) => { // Render login.ejs
@@ -153,7 +145,7 @@ app.get('/login', (req, res) => { // Render login.ejs
   if(userId && users[userId]) { // Won't let logged in user access login page
     res.redirect('/urls');
   } else {
-  res.render('login');
+  res.render('login', {user: null});
   }
 })
 
@@ -196,6 +188,7 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 app.post('/urls/:shortUrl', (req, res) => {
+  console.log('Inside endpoint');
   const shortUrl = req.params.shortUrl;
   const longUrl = req.body.longUrl;
   const userId = req.session.userId;
@@ -239,12 +232,15 @@ app.post('/urls/:id', (req, res) => { // Updating longUrl Post route
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+
   const user = getUserByEmail(email, users);
+
   const hashedPassword = bcrypt.hashSync(password,10);
   if (!email || !password) {
     return res.status(400).send("Email and Password are required!")
   }
-  if (bcrypt.compareSync(password, user.password)) {
+
+  if (user && bcrypt.compareSync(password, user.password)) {
     req.session.userId = user.id;// Storing userId cookie as input of user.id
     res.redirect("/urls");
   } else {
